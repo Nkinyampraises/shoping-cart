@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import './App.css';
 
 const STORAGE_KEY = 'shooping-todo-list';
 
@@ -7,21 +8,31 @@ function App() {
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
+      const storedTheme = localStorage.getItem('shooping-theme');
       if (stored) {
         setItems(JSON.parse(stored));
       }
+      if (storedTheme) {
+        setTheme(storedTheme);
+      }
     } catch (error) {
-      console.error('Cannot load items from localStorage', error);
+      console.error('Cannot load settings from localStorage', error);
     }
   }, []);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
+
+  useEffect(() => {
+    localStorage.setItem('shooping-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   const addItem = () => {
     const text = input.trim();
@@ -83,191 +94,93 @@ function App() {
   const totalCount = items.length;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>Shooping Todo</h1>
+    <div className="page"> 
+      <header className="topbar">
+        <div className="brand">Shooping</div>
+        <nav className="nav">
+          <a href="#home">Home</a>
+          <a href="#todo">Todo</a>
+          <a href="#about">About</a>
+        </nav>
+        <button className="themeToggle" onClick={() => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))}>
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+      </header>
 
-        <div style={styles.stats}>
-          <span>{totalCount} total</span>
-          <span>{doneCount} done</span>
-          <span>{totalCount - doneCount} pending</span>
-        </div>
+      <main className="content">
+        <section id="home" className="hero">
+          <h1>Well Structured Todo Web App</h1>
+          <p>Track tasks, stay focused, and ship quickly with a modern React UI.</p>
+          <a href="#todo" className="cta">Get Started</a>
+        </section>
 
-        <div style={styles.inputLine}>
-          <input
-            style={styles.input}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addItem()}
-            placeholder="Add a task e.g. 'Buy groceries'"
-            aria-label="Task input"
-          />
-          <button style={styles.button} onClick={addItem}>
-            {editingId !== null ? 'Update item' : 'Add item'}
-          </button>
-        </div>
+        <section id="todo" className="card">
+          <div className="statsBar">
+            <span>{totalCount} tasks</span>
+            <span>{doneCount} completed</span>
+            <span>{totalCount - doneCount} pending</span>
+          </div>
 
-        <div style={styles.filterRow}>
-          {['all', 'todo', 'done'].map((value) => (
-            <button
-              key={value}
-              style={
-                filter === value
-                  ? { ...styles.filterButton, ...styles.activeFilter }
-                  : styles.filterButton
-              }
-              onClick={() => setFilter(value)}
-            >
-              {value.charAt(0).toUpperCase() + value.slice(1)}
+          <div className="inputRow">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addItem()}
+              placeholder="Add a task..." 
+              aria-label="Task input"
+            />
+            <button onClick={addItem}>{editingId !== null ? 'Update' : 'Add'}</button>
+          </div>
+
+          <div className="filterRow">
+            {['all', 'todo', 'done'].map((value) => (
+              <button
+                key={value}
+                className={filter === value ? 'active' : ''}
+                onClick={() => setFilter(value)}
+              >
+                {value}
+              </button>
+            ))}
+            <button className="danger" onClick={clearAll} disabled={items.length === 0}>
+              Clear All
             </button>
-          ))}
-          <button style={styles.clearButton} onClick={clearAll} disabled={items.length === 0}>
-            Clear All
-          </button>
-        </div>
+          </div>
 
-        <ul style={styles.list}>
-          {filtered.length === 0 ? (
-            <li style={styles.empty}>No matching tasks. Add one above.</li>
-          ) : (
-            filtered.map((item) => (
-              <li key={item.id} style={styles.item}>
-                <label style={styles.itemLabel}>
-                  <input
-                    type="checkbox"
-                    checked={item.done}
-                    onChange={() => toggleDone(item.id)}
-                    style={styles.checkbox}
-                    aria-label={`Mark ${item.text} as done`}
-                  />
-                  <span style={item.done ? styles.doneText : styles.normalText}>{item.text}</span>
-                </label>
-                <div style={styles.itemActions}>
-                  <button style={styles.smallBtn} onClick={() => startEdit(item.id)}>
-                    Edit
-                  </button>
-                  <button style={styles.smallBtnDanger} onClick={() => removeItem(item.id)}>
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
-      </div>
+          <ul className="taskList">
+            {filtered.length === 0 ? (
+              <li className="empty">No tasks found. Add your first task above.</li>
+            ) : (
+              filtered.map((item) => (
+                <li key={item.id} className="taskItem">
+                  <label>
+                    <input type="checkbox" checked={item.done} onChange={() => toggleDone(item.id)} />
+                    <span className={item.done ? 'done' : ''}>{item.text}</span>
+                  </label>
+                  <div className="actions">
+                    <button className="edit" onClick={() => startEdit(item.id)}>Edit</button>
+                    <button className="delete" onClick={() => removeItem(item.id)}>Delete</button>
+                  </div>
+                </li>
+              ))
+            )}
+          </ul>
+        </section>
+
+        <section id="about" className="infoCard">
+          <h2>About This Project</h2>
+          <ul>
+            <li>React functional components with hooks</li>
+            <li>Local storage persistence</li>
+            <li>Responsive layout with theme toggle</li>
+            <li>Structured sections and smooth navigation</li>
+          </ul>
+        </section>
+      </main>
+
+      <footer className="footer">Shooping App © {new Date().getFullYear()}</footer>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    padding: '2rem 1rem',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 700,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)',
-    padding: '1.5rem 1.25rem 1.25rem',
-    marginTop: '1rem',
-  },
-  title: { marginBottom: '0.75rem', fontSize: '2rem', color: '#2d3748', textAlign: 'center' },
-  stats: {
-    display: 'flex',
-    justifyContent: 'space-evenly',
-    color: '#4a5568',
-    marginBottom: '1rem',
-    fontWeight: 600,
-  },
-  inputLine: { display: 'flex', gap: '0.7rem', marginBottom: '1rem' },
-  input: {
-    flex: 1,
-    padding: '0.75rem 1rem',
-    fontSize: '1rem',
-    border: '1px solid #d6dde6',
-    borderRadius: 10,
-    boxShadow: 'inset 0 1px 3px rgba(15, 23, 42, 0.06)',
-  },
-  button: {
-    backgroundColor: '#1e40af',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 10,
-    padding: '0.75rem 1.15rem',
-    fontWeight: 700,
-    cursor: 'pointer',
-    boxShadow: '0 5px 15px rgba(99, 102, 241, .25)',
-  },
-  filterRow: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' },
-  filterButton: {
-    padding: '0.4rem 0.8rem',
-    border: '1px solid #cbd5e1',
-    borderRadius: 12,
-    background: '#f8fafc',
-    color: '#334155',
-    cursor: 'pointer',
-  },
-  activeFilter: {
-    borderColor: '#1d4ed8',
-    background: '#eff6ff',
-    color: '#1d4ed8',
-    fontWeight: 700,
-  },
-  clearButton: {
-    marginLeft: 'auto',
-    padding: '0.4rem 0.8rem',
-    background: '#ef4444',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 12,
-    cursor: 'pointer',
-    opacity: 1,
-  },
-  list: { listStyle: 'none', padding: 0, margin: 0 },
-  empty: {
-    padding: '1rem',
-    color: '#64748b',
-    textAlign: 'center',
-    fontStyle: 'italic',
-    border: '1px dashed #cbd5e1',
-    borderRadius: 10,
-  },
-  item: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottom: '1px solid #e2e8f0',
-    padding: '0.75rem 0',
-  },
-  itemLabel: { display: 'flex', alignItems: 'center', gap: '0.6rem', width: '80%' },
-  checkbox: { width: 18, height: 18 },
-  normalText: { color: '#1e293b', fontWeight: 600 },
-  doneText: { color: '#94a3b8', textDecoration: 'line-through', fontWeight: 600 },
-  itemActions: { display: 'flex', gap: '0.45rem' },
-  smallBtn: {
-    padding: '0.35rem 0.6rem',
-    border: '1px solid #3b82f6',
-    borderRadius: 8,
-    background: '#dbeafe',
-    color: '#1d4ed8',
-    cursor: 'pointer',
-    fontWeight: 700,
-  },
-  smallBtnDanger: {
-    padding: '0.35rem 0.6rem',
-    border: '1px solid #f87171',
-    borderRadius: 8,
-    background: '#fee2e2',
-    color: '#b91c1c',
-    cursor: 'pointer',
-    fontWeight: 700,
-  },
-};
 
 export default App;
